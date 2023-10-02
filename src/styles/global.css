@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  color: white;
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+th {
+  background-color: hsl(0 0% 0% / 0.5);
+}
+
+tr:nth-of-type(2n) {
+  background-color: hsl(0 0% 0% / 0.1);
+}

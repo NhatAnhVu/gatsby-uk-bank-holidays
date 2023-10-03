@@ -2,25 +2,30 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import { Helmet } from "react-helmet";
+import Loading from "../components/Loading";
+import LoadingInfinite from "../components/LoadingInfinite";
 
 export default function Home() {
   const [hodidayData, setHolidayData] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [loading, setLoading] = useState(false);
+  const [itemsPerPage] = useState(20);
   const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [isInfiniteScroll, setIsInfiniteScroll] = useState(false);
+  const [loadingInfinite, setLoadingInfinite] = useState(false);
+  const isScrolling = React.useRef(false);
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      fetch(`https://www.gov.uk/bank-holidays.json`)
+    (async () => {
+      setLoading(true);
+      await fetch(`https://www.gov.uk/bank-holidays.json`)
         .then((response) => response.json())
         .then((resultData) => {
           setHolidayData(Object.entries(resultData));
-          setLoading(false);
         });
-    }, 1000);
+      setLoading(false);
+    })();
   }, []);
 
   let holiday = hodidayData
@@ -35,9 +40,41 @@ export default function Home() {
     )
     .flat(1);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const { scrollTop, clientHeight, scrollHeight } =
+        document.documentElement;
+      if (scrollTop + clientHeight >= scrollHeight - 20 && isInfiniteScroll) {
+        if (
+          isScrolling.current ||
+          currentPage === Math.ceil(holiday.length / itemsPerPage)
+        ) {
+          return;
+        }
+        isScrolling.current = true;
+        setLoadingInfinite(true);
+        setTimeout(() => {
+          setCurrentPage((prev) => prev + 1);
+          setLoadingInfinite(false);
+        }, 1000);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [currentPage, isInfiniteScroll, holiday.length, itemsPerPage]);
+
+  useEffect(() => {
+    isScrolling.current = false;
+  }, [currentPage]);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = holiday.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = isInfiniteScroll
+    ? holiday.slice(0, indexOfLastItem)
+    : holiday.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <>
@@ -45,23 +82,39 @@ export default function Home() {
         <title>UK Bank Holidays</title>
       </Helmet>
       <div className="wrapper">
-        <select
-          defaultValue=""
-          className="p-2 mb-2 border border-black"
-          onChange={(e) => {
-            setSelectedRegion(e.target.value);
-            setCurrentPage(1);
-            setPage(0);
-          }}
-        >
-          <option value=""> - select a region - </option>
-          {hodidayData.map((region) => (
-            <option key={region[0]} value={region[0]}>
-              {region[0].replaceAll("-", " ").toUpperCase()}
-            </option>
-          ))}
-        </select>
-        <table className=" border-collapse w-full border border-black">
+        <div className="flex items-center justify-between">
+          <select
+            defaultValue=""
+            className="p-2 mb-2 border border-black"
+            onChange={(e) => {
+              setSelectedRegion(e.target.value);
+              setCurrentPage(1);
+              setPage(0);
+            }}
+          >
+            <option value=""> - select a region - </option>
+            {hodidayData.map((region) => (
+              <option key={region[0]} value={region[0]}>
+                {region[0].replaceAll("-", " ").toUpperCase()}
+              </option>
+            ))}
+          </select>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              value=""
+              className="sr-only peer"
+              onChange={(e) => {
+                setIsInfiniteScroll(e.target.checked);
+                setCurrentPage(1);
+                setPage(0);
+              }}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ml-3 text-sm font-medium">Infinite Scroll</span>
+          </label>
+        </div>
+        <table className=" border-collapse w-full">
           <caption className="bg-black text-white p-4 text-left ">
             <div className="text-[1.5rem] font-bold uppercase">
               UK Bank Holidays From 2018 To 2025{" "}
@@ -111,30 +164,9 @@ export default function Home() {
               ))}
           </tbody>
         </table>
-        {loading && (
-          <div class="border border-black w-full h-[50vh] flex items-center justify-center">
-            <div className="flex items-center gap-2">
-              <svg
-                aria-hidden="true"
-                class="w-8 h-8 mr-2 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                viewBox="0 0 100 101"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                  fill="currentFill"
-                />
-              </svg>{" "}
-              Loading...
-            </div>
-          </div>
-        )}
-        {hodidayData.length > 0 && (
+        {loading && <Loading />}
+        {loadingInfinite && <LoadingInfinite />}
+        {hodidayData.length > 0 && !isInfiniteScroll && (
           <ReactPaginate
             onPageChange={(value) => {
               setPage(value.selected);

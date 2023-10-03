@@ -6,12 +6,13 @@ body {
   color: black;
   font-size: 1.125rem;
   line-height: 1.5;
+  padding-top: 1em;
+  padding-bottom: 1em;
 }
 
 .wrapper {
   width: min(1280px, 100% - 3rem);
   margin-inline: auto;
-  padding-top: 1em;
 }
 
 th {

@@ -41,6 +41,8 @@ export default function Home() {
     .flat(1);
 
   useEffect(() => {
+    isScrolling.current = false;
+
     const handleScroll = () => {
       const { scrollTop, clientHeight, scrollHeight } =
         document.documentElement;
@@ -65,10 +67,6 @@ export default function Home() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, [currentPage, isInfiniteScroll, holiday.length, itemsPerPage]);
-
-  useEffect(() => {
-    isScrolling.current = false;
-  }, [currentPage]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -164,6 +162,11 @@ export default function Home() {
               ))}
           </tbody>
         </table>
+        {hodidayData.length === 0 && (
+          <div className="w-full h-[20vh] flex items-center justify-center">
+            There's no data to display
+          </div>
+        )}
         {loading && <Loading />}
         {loadingInfinite && <LoadingInfinite />}
         {hodidayData.length > 0 && !isInfiniteScroll && (

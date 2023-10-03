@@ -12,7 +12,6 @@ body {
   width: min(1280px, 100% - 3rem);
   margin-inline: auto;
   padding-top: 1em;
-  padding-bottom: 1em;
 }
 
 th {
@@ -20,7 +19,7 @@ th {
 }
 
 tr:nth-of-type(2n) {
-  background-color: hsl(0 0% 0% / 0.1);
+  background-color: hsl(0 0% 0% / 0.05);
 }
 
 .page-number {

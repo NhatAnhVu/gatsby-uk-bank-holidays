@@ -32,13 +32,11 @@ _To run this project _
    gatsby develop
    ```
 
-   To run this project on production mode, compile this project to a production-ready version
+   To run this project on production mode, compile this project to a production-ready version. Once built, serves the production build of this project
 
    ```sh
    gatsby build
    ```
-
-   Serves the production build of this project
 
    ```sh
    gatsby serve
